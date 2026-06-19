@@ -1,0 +1,52 @@
+package framework ;
+
+import framework.PackageScanner ;
+import jakarta.servlet.* ;
+import jakarta.servlet.http.* ;
+import java.io.* ;
+import java.util.Set ;
+import java.util.HashSet ;
+import java.lang.Class ;
+import java.net.URL ;
+import java.util.Enumeration ;
+
+public class FrontControllerServlet extends HttpServlet {
+    
+    static Set<String> classes = new HashSet<String> () ;
+
+    public void init () throws ServletException{
+        PackageScanner packageScanner = new PackageScanner () ;
+        String packageName = getInitParameter ("packageName") ;
+        String annotation = getInitParameter ("annotation");        
+        FrontControllerServlet.classes = packageScanner.findAnnotedClasses(annotation,packageName);
+        
+    }
+
+    public void processRequest (HttpServletRequest req , HttpServletResponse res) 
+    throws IOException, ServletException { 
+        res.setContentType("text/html");
+        PrintWriter out = res.getWriter() ;
+
+        String packageName = getInitParameter ("packageName") ;
+        String annotation = getInitParameter ("annotation");   
+
+        out.println("<p> classes dont le package contient "+packageName+" : </p>");
+        out.println("<ul>");
+        for ( String className : FrontControllerServlet.classes ) {
+            out.println("<li>" + className + "</li>");
+        }
+        out.println("</ul>");
+    }   
+
+    public void doGet(HttpServletRequest req, HttpServletResponse res) 
+    throws IOException, ServletException {
+        processRequest (req, res);
+    }  
+
+    public void doPost(HttpServletRequest req, HttpServletResponse res) 
+    throws IOException, ServletException {
+        processRequest (req, res);
+    }  
+
+    
+}
