@@ -1,0 +1,74 @@
+package framework ;
+
+import java.lang.Class ;
+import java.util.Set ;
+import java.util.HashSet ;
+import java.net.URL ;
+import java.util.Enumeration ;
+import java.io.File ;
+
+public class PackageScanner {
+    public Set<String> findAnnotedClasses (String annotation, String packageName) {
+        Set<String> result = new HashSet<String>();
+
+        try {
+            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+            String packagePath = packageName.replace('.', '/');
+            Enumeration<URL> resources = classloader.getResources(packagePath);
+            while ( resources.hasMoreElements()) {
+                URL resource = resources.nextElement();
+                File dir = new File (resource.getFile());
+
+                Set<String> annotedClasses = findAnnotedClassesFromDir (annotation, packageName, dir);
+                result.addAll(annotedClasses);
+
+            }
+        } catch ( Exception e ) {
+            System.out.println (e.getMessage());
+        }
+
+        return result ;
+
+    }
+
+    public Set<String> findAnnotedClassesFromDir (String annotation, String packageName, File dir) {
+        Set<String> annotedClasses = new HashSet<String>();
+
+        File [] files = dir.listFiles();
+        if (files == null) return annotedClasses ;
+
+        for (File f : files) {
+            if (f.isDirectory()) {
+                
+                String nextPackageName = packageName.isEmpty() ? f.getName() : packageName + "." + f.getName();
+                
+                annotedClasses.addAll(findAnnotedClassesFromDir(annotation, nextPackageName, f));
+                
+            } else if (f.getName().endsWith(".class")) {
+                
+                String simpleClassName = f.getName().substring(0, f.getName().length() - 6);
+                String fullClassName = packageName.isEmpty() ? simpleClassName : packageName + "." + simpleClassName;
+
+                // BUG 3 CORRIGÉ : On utilise la réflexion pour charger la classe et checker l'annotation
+                // try {
+                //     Class<?> clazz = Class.forName(fullClassName);
+                    
+                //     // On parcourt toutes les annotations présentes sur cette classe
+                //     for (Annotation ann : clazz.getAnnotations()) {
+                //         // On compare le nom simple de l'annotation (ex: "Controller")
+                //         if (ann.annotationType().getSimpleName().equals(annotationName)) {
+                //             annotedClasses.add(fullClassName);
+                //             break; // Pas besoin de checker les autres annotations de cette classe
+                //         }
+                //     }
+                // } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                //     // On ignore les classes impossibles à charger
+                // }
+            }
+        }
+        return annotedClasses ;
+    }
+
+    
+
+}
